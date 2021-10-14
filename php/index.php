@@ -117,7 +117,8 @@ $container->set('helper', function ($c) {
 
         public function get_session_user() {
             if (isset($_SESSION['user'], $_SESSION['user']['id'])) {
-                return $this->fetch_first('SELECT * FROM `users` WHERE `id` = ?', $_SESSION['user']['id']);
+                //  接続の確認だけなので*で全取得する必要はなさそう
+                return $this->fetch_first('SELECT `account_name` FROM `users` WHERE `id` = ?', $_SESSION['user']['id']);
             } else {
                 return null;
             }
@@ -321,7 +322,8 @@ $app->get('/posts', function (Request $request, Response $response) {
 
 $app->get('/posts/{id}', function (Request $request, Response $response, $args) {
     $db = $this->get('db');
-    $ps = $db->prepare('SELECT * FROM `posts` WHERE `id` = ?');
+    // idしか使ってないので*で全取得する必要はない
+    $ps = $db->prepare('SELECT `id` FROM `posts` WHERE `id` = ?');
     $ps->execute([$args['id']]);
     $results = $ps->fetchAll(PDO::FETCH_ASSOC);
     $posts = $this->get('helper')->make_posts($results, ['all_comments' => true]);

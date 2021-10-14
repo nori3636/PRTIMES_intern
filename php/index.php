@@ -118,7 +118,7 @@ $container->set('helper', function ($c) {
         public function get_session_user() {
             if (isset($_SESSION['user'], $_SESSION['user']['id'])) {
                 //  接続の確認だけなので*で全取得する必要はなさそう
-                return $this->fetch_first('SELECT `account_name` FROM `users` WHERE `id` = ?', $_SESSION['user']['id']);
+                return $this->fetch_first('SELECT `id`,`account_name` FROM `users` WHERE `id` = ?', $_SESSION['user']['id']);
             } else {
                 return null;
             }
@@ -322,9 +322,6 @@ $app->get('/posts', function (Request $request, Response $response) {
 });
 
 $app->get('/posts/{id}', function (Request $request, Response $response, $args) {
-    if ($args['id'] == 0) {
-        return redirect($response, '/posts/0', 302);
-    }
 
     $db = $this->get('db');
     $ps = $db->prepare('SELECT * FROM `posts` WHERE `id` = ?');
@@ -344,6 +341,7 @@ $app->get('/posts/{id}', function (Request $request, Response $response, $args) 
     return $this->get('view')->render($response, 'post.php', ['post' => $post, 'me' => $me]);
 });
 
+// 
 $app->post('/', function (Request $request, Response $response) {
     $me = $this->get('helper')->get_session_user();
 

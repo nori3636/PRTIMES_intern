@@ -124,17 +124,18 @@ $container->set('helper', function ($c) {
             }
         }
 
+        // 確実に計算量が多いので後で直す
         public function make_posts(array $results, $options = []) {
             $options += ['all_comments' => false];
             $all_comments = $options['all_comments'];
 
             $posts = [];
             foreach ($results as $post) {
-                $post['comment_count'] = $this->fetch_first('SELECT COUNT(*) AS `count` FROM `comments` WHERE `post_id` = ?', $post['id'])['count'];
-                $query = 'SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `created_at` DESC';
-                if (!$all_comments) {
-                    $query .= ' LIMIT 3';
-                }
+                // $post['comment_count'] = $this->fetch_first('SELECT COUNT(*) AS `count` FROM `comments` WHERE `post_id` = ?', $post['id'])['count'];
+                // $query = 'SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `created_at` DESC';
+                // if (!$all_comments) {
+                //     $query .= ' LIMIT 3';
+                // }
 
                 $ps = $this->db()->prepare($query);
                 $ps->execute([$post['id']]);
@@ -321,9 +322,12 @@ $app->get('/posts', function (Request $request, Response $response) {
 });
 
 $app->get('/posts/{id}', function (Request $request, Response $response, $args) {
+    if ($args['id'] == 0) {
+        return redirect($response, '/posts/0', 302);
+    }
+
     $db = $this->get('db');
-    // idしか使ってないので*で全取得する必要はない
-    $ps = $db->prepare('SELECT `id` FROM `posts` WHERE `id` = ?');
+    $ps = $db->prepare('SELECT * FROM `posts` WHERE `id` = ?');
     $ps->execute([$args['id']]);
     $results = $ps->fetchAll(PDO::FETCH_ASSOC);
     $posts = $this->get('helper')->make_posts($results, ['all_comments' => true]);
@@ -486,6 +490,7 @@ $app->post('/admin/banned', function (Request $request, Response $response) {
 });
 
 $app->get('/@{account_name}', function (Request $request, Response $response, $args) {
+
     $db = $this->get('db');
     $user = $this->get('helper')->fetch_first('SELECT * FROM `users` WHERE `account_name` = ? AND `del_flg` = 0', $args['account_name']);
 

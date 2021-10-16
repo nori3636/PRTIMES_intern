@@ -143,6 +143,7 @@ $container->set('helper', function ($c) {
                 $comments = $ps->fetchAll(PDO::FETCH_ASSOC);
                 foreach ($comments as &$comment) {
                     $comment['user'] = $this->fetch_first('SELECT * FROM `users` WHERE `id` = ?', $comment['user_id']);
+                    $post['comment_count']+=1;
                 }
                 unset($comment);
                 $post['comments'] = array_reverse($comments);

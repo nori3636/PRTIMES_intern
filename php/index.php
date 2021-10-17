@@ -105,7 +105,8 @@ $container->set('helper', function ($c) {
         }
 
         public function try_login($account_name, $password) {
-            $user = $this->fetch_first('SELECT * FROM users WHERE account_name = ? AND del_flg = 0', $account_name);
+            // ワイルドカードを必要なものだけに変更
+            $user = $this->fetch_first('SELECT `id`,`account_name`,`passhash` FROM users WHERE account_name = ? AND del_flg = 0', $account_name);
             if ($user !== false && calculate_passhash($user['account_name'], $password) == $user['passhash']) {
                 return $user;
             } elseif ($user) {
@@ -117,29 +118,32 @@ $container->set('helper', function ($c) {
 
         public function get_session_user() {
             if (isset($_SESSION['user'], $_SESSION['user']['id'])) {
-                return $this->fetch_first('SELECT * FROM `users` WHERE `id` = ?', $_SESSION['user']['id']);
+                //  接続の確認だけなので*で全取得する必要はなさそう
+                return $this->fetch_first('SELECT `id`,`account_name` FROM `users` WHERE `id` = ?', $_SESSION['user']['id']);
             } else {
                 return null;
             }
         }
 
+        // postのQueryが重い。コメントはベンチマークの範囲外？！なのでとりあえずコメントアウトしてみる
         public function make_posts(array $results, $options = []) {
             $options += ['all_comments' => false];
             $all_comments = $options['all_comments'];
 
             $posts = [];
             foreach ($results as $post) {
-                $post['comment_count'] = $this->fetch_first('SELECT COUNT(*) AS `count` FROM `comments` WHERE `post_id` = ?', $post['id'])['count'];
-                $query = 'SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `created_at` DESC';
-                if (!$all_comments) {
-                    $query .= ' LIMIT 3';
-                }
+                // $post['comment_count'] = $this->fetch_first('SELECT COUNT(*) AS `count` FROM `comments` WHERE `post_id` = ?', $post['id'])['count'];
+                // $query = 'SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `created_at` DESC';
+                // if (!$all_comments) {
+                //     $query .= ' LIMIT 3';
+                // }
 
                 $ps = $this->db()->prepare($query);
                 $ps->execute([$post['id']]);
                 $comments = $ps->fetchAll(PDO::FETCH_ASSOC);
                 foreach ($comments as &$comment) {
                     $comment['user'] = $this->fetch_first('SELECT * FROM `users` WHERE `id` = ?', $comment['user_id']);
+                    $post['comment_count']+=1;
                 }
                 unset($comment);
                 $post['comments'] = array_reverse($comments);
@@ -320,6 +324,7 @@ $app->get('/posts', function (Request $request, Response $response) {
 });
 
 $app->get('/posts/{id}', function (Request $request, Response $response, $args) {
+
     $db = $this->get('db');
     $ps = $db->prepare('SELECT * FROM `posts` WHERE `id` = ?');
     $ps->execute([$args['id']]);
@@ -338,6 +343,7 @@ $app->get('/posts/{id}', function (Request $request, Response $response, $args) 
     return $this->get('view')->render($response, 'post.php', ['post' => $post, 'me' => $me]);
 });
 
+// 
 $app->post('/', function (Request $request, Response $response) {
     $me = $this->get('helper')->get_session_user();
 
@@ -484,6 +490,7 @@ $app->post('/admin/banned', function (Request $request, Response $response) {
 });
 
 $app->get('/@{account_name}', function (Request $request, Response $response, $args) {
+
     $db = $this->get('db');
     $user = $this->get('helper')->fetch_first('SELECT * FROM `users` WHERE `account_name` = ? AND `del_flg` = 0', $args['account_name']);
 

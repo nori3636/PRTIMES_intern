@@ -1,8 +1,19 @@
+worker_processes 1;
+
+upstream app {
+    server 127.0.0.1:8080;
+    keepalive 32;
+  }
+
 server {
   listen 80;
 
   client_max_body_size 10m;
   root /public/;
+
+  location ~ .*\.(jpg|jpeg|png|)$ {
+          expires 1h;
+        }
 
   location / {
     proxy_set_header Host $host;

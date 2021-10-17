@@ -142,13 +142,13 @@ $container->set('helper', function ($c) {
                 $ps->execute([$post['id']]);
                 $comments = $ps->fetchAll(PDO::FETCH_ASSOC);
                 foreach ($comments as &$comment) {
-                    $comment['user'] = $this->fetch_first('SELECT * FROM `users` WHERE `id` = ?', $comment['user_id']);
+                    $comment['user'] = $this->fetch_first('SELECT `account_name` FROM `users` WHERE `id` = ?', $comment['user_id']);
                     $post['comment_count']+=1;
                 }
                 unset($comment);
                 $post['comments'] = array_reverse($comments);
 
-                $post['user'] = $this->fetch_first('SELECT * FROM `users` WHERE `id` = ?', $post['user_id']);
+                $post['user'] = $this->fetch_first('SELECT `account_name` FROM `users` WHERE `id` = ?', $post['user_id']);
                 if ($post['user']['del_flg'] == 0) {
                     $posts[] = $post;
                 }
@@ -326,7 +326,7 @@ $app->get('/posts', function (Request $request, Response $response) {
 $app->get('/posts/{id}', function (Request $request, Response $response, $args) {
 
     $db = $this->get('db');
-    $ps = $db->prepare('SELECT * FROM `posts` WHERE `id` = ?');
+    $ps = $db->prepare('SELECT `id`, `user_id`, `body`, `mime`, `created_at` FROM `posts` WHERE `id` = ?');
     $ps->execute([$args['id']]);
     $results = $ps->fetchAll(PDO::FETCH_ASSOC);
     $posts = $this->get('helper')->make_posts($results, ['all_comments' => true]);
@@ -492,7 +492,7 @@ $app->post('/admin/banned', function (Request $request, Response $response) {
 $app->get('/@{account_name}', function (Request $request, Response $response, $args) {
 
     $db = $this->get('db');
-    $user = $this->get('helper')->fetch_first('SELECT * FROM `users` WHERE `account_name` = ? AND `del_flg` = 0', $args['account_name']);
+    $user = $this->get('helper')->fetch_first('SELECT `id`,`account_name` FROM `users` WHERE `account_name` = ? AND `del_flg` = 0', $args['account_name']);
 
     if ($user === false) {
         $response->getBody()->write('404');

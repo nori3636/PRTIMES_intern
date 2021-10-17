@@ -11,7 +11,7 @@ server {
   client_max_body_size 10m;
   root /public/;
 
-  location ~ .*\.(jpg|jpeg|png|)$ {
+  location ~ .*\.(|jpeg|png|gif)$ {
           expires 1h;
         }
 

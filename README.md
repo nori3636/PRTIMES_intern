@@ -1,6 +1,7 @@
 # PRTIMES_intern
 
-https://github.com/catatsuy/private-isu　に挑戦してみる。
+https://github.com/catatsuy/private-isu
+に挑戦してみる。
 
 ## docker起動方法
 ```
